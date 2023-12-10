@@ -1,2 +1,2 @@
-# aoc
+# AoC
 AoC solutions
