@@ -61,12 +61,8 @@ def get_adjacent_gear(lines: list, first: int, last: int):
         return first + idx, 1
 
 
-gears = {}
-'''Sparse gear array'''
-
-
 # TODO: Code duplicate
-def count_gears(lines: list, line_num: int):
+def count_gears(lines: list, line_num: int, gears: dict):
     num_string = ''
     first = None
     last = 0
@@ -91,7 +87,7 @@ def count_gears(lines: list, line_num: int):
             first = None
 
 
-def sum_gear_ratios():
+def sum_gear_ratios(gears):
     total = 0
 
     for pairs in gears.values():
@@ -107,6 +103,8 @@ def solver(input_path, puzzle_type: str):
     assert puzzle_type in ('sum', 'ratio')
 
     puzzle_answer = 0
+    gears = {}
+    '''Sparse gear array'''
 
     with open(input_path, 'r') as puzzle:
         lines = [
@@ -120,13 +118,13 @@ def solver(input_path, puzzle_type: str):
             if puzzle_type == 'sum':
                 puzzle_answer += count_part_numbers(lines)
             else:
-                count_gears(lines, line_num)
+                count_gears(lines, line_num, gears)
                 line_num += 1
 
             lines[0], lines[1], lines[2] = lines[1], lines[2], puzzle.readline().rstrip()
 
     if puzzle_type == 'ratio':
-        puzzle_answer = sum_gear_ratios()
+        puzzle_answer = sum_gear_ratios(gears)
 
     return puzzle_answer
 
