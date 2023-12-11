@@ -1,3 +1,6 @@
+GEAR = '*'
+
+
 def get_adjacent_symbols(lines: list, first: int, last: int):
     symbols = ''
 
@@ -18,6 +21,7 @@ def count_part_numbers(lines: list):
     line_count = 0
     first = None
     last = 0
+    end_pos = len(lines[1]) - 1
 
     # In the first part of the puzzle iterate over numbers and check if they have symbols adjacent
     # This will give correct result if a number has more than one symbol around it
@@ -26,13 +30,11 @@ def count_part_numbers(lines: list):
             num_string += c
             if first is None:
                 first = pos
-            last = max(pos, last)
-        elif num_string:  # reached the end of number
+            last = pos
+        if num_string and (not c.isdigit() or pos == end_pos):  # reached the end of number or line
             adjacent = get_adjacent_symbols(lines, first, last)
             if adjacent != '':
                 line_count += int(num_string)
-            elif adjacent == '*':
-                pass
             num_string = ''
             first = None
 
@@ -40,22 +42,21 @@ def count_part_numbers(lines: list):
 
 
 def get_adjacent_gear(lines: list, first: int, last: int):
-    symbols = ''
-
-    if last < len(lines[1]) - 1:
-        last += 2
-        if lines[1][last - 1] == '*':
-            return last - 1, 0
     if first > 0:
         first -= 1
-        if lines[1][first] == '*':
+        if lines[1][first] == GEAR:
             return first, 0
 
-    idx = lines[0][first:last].find('*')
+    if last < len(lines[1]) - 1:
+        last += 1
+        if lines[1][last] == GEAR:
+            return last, 0
+
+    idx = lines[0][first:last + 1].find(GEAR)
     if idx >= 0:
         return first + idx, -1
 
-    idx = lines[2][first:last].find('*')
+    idx = lines[2][first:last + 1].find(GEAR)
     if idx >= 0:
         return first + idx, 1
 
@@ -64,22 +65,24 @@ gears = {}
 '''Sparse gear array'''
 
 
+# TODO: Code duplicate
 def count_gears(lines: list, line_num: int):
     num_string = ''
     first = None
     last = 0
+    end_pos = len(lines[1]) - 1
 
     for pos, c in enumerate(lines[1]):
         if c.isdigit():
             num_string += c
             if first is None:
                 first = pos
-            last = max(pos, last)
-        elif num_string:  # reached the end of number
+            last = pos
+        if num_string and (not c.isdigit() or pos == end_pos):  # reached the end of number
             adjacent = get_adjacent_symbols(lines, first, last)
-            if adjacent == '*':
-                x, y = get_adjacent_gear(lines, first, last)
-                key = f'{x},{line_num + y}'
+            if adjacent == GEAR:
+                x, dy = get_adjacent_gear(lines, first, last)
+                key = x, line_num + dy
                 if key in gears:
                     gears[key].append(int(num_string))
                 else:
@@ -108,8 +111,8 @@ def solver(input_path, puzzle_type: str):
     with open(input_path, 'r') as puzzle:
         lines = [
             '',
-            puzzle.readline(),  # Leave new lines at the end
-            puzzle.readline(),
+            puzzle.readline().rstrip(),
+            puzzle.readline().rstrip(),
         ]
         line_num = 0
 
@@ -118,9 +121,9 @@ def solver(input_path, puzzle_type: str):
                 puzzle_answer += count_part_numbers(lines)
             else:
                 count_gears(lines, line_num)
+                line_num += 1
 
-            lines[0], lines[1], lines[2] = lines[1], lines[2], puzzle.readline()
-            line_num += 1
+            lines[0], lines[1], lines[2] = lines[1], lines[2], puzzle.readline().rstrip()
 
     if puzzle_type == 'ratio':
         puzzle_answer = sum_gear_ratios()
@@ -128,23 +131,37 @@ def solver(input_path, puzzle_type: str):
     return puzzle_answer
 
 
-if __name__ == '__main__':
-    expected1 = 4361
-    result1 = solver('test_input', 'sum')
-    assert result1 == expected1, f'Example 1 failed: {result1}'
+def run_examples():
+    examples = (
+        ('test_input', 'sum', 4361),
+        ('test_input', 'ratio', 467835),
+    )
 
-    expected2 = 467835
-    result2 = solver('test_input', 'ratio')
-    assert result2 == expected2, f'Example 2 failed: {result2}'
+    for path, puzzle_type, expected in examples:
+        result = solver(path, puzzle_type)
+        assert result == expected, f'Example {puzzle_type} {path} failed: {result}'
+
+    print('Examples passed')
+
+
+def main():
+    import time
+    start_time = time.time()
 
     part1 = solver('input', 'sum')
     part2 = solver('input', 'ratio')
 
-    print("Examples passed")
+    took = time.time() - start_time
+
     print("Puzzle 1 answer:", part1)
     print("Puzzle 2 answer:", part2)
+    print(f'Both solutions found in {took:.3f}s')  # 3ms
 
     # Regression test
-    assert part1 == 54388
+    assert part1 == 530495
     assert part2 == 80253814
 
+
+if __name__ == '__main__':
+    run_examples()
+    main()
