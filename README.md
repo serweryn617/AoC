@@ -3,4 +3,3 @@
 
 TODO:
 - find better solution to puzzle 5
-- fix puzzle 7

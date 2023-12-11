@@ -52,14 +52,15 @@ def solver(input_path: str, puzzle_type: str):
     games = []
     use_wildcards = puzzle_type == 'wildcard'
 
+    strengths = CARDS.copy()
     if use_wildcards:
-        CARDS['J'] = -1  # modifying a 'const'
+        strengths['J'] = -1  # modifying a 'const'
 
     with open(input_path, 'r') as puzzle:
         for line in puzzle.readlines():
             hand, bid = line.split()
             hand_strength = get_strength(hand, use_wildcards)
-            card_strength = [CARDS[c] for c in hand]
+            card_strength = [strengths[c] for c in hand]
             games.append({
                 'strength': [hand_strength] + card_strength,
                 'bid': int(bid)
