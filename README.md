@@ -11,3 +11,9 @@ n = 1000
 x = timeit.timeit(lambda: solver('input', ...), number=n)
 print(x / n)
 ```
+
+Profiling:
+```py
+import cProfile
+cProfile.run("solver('input', ...)")
+```
