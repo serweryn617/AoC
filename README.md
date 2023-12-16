@@ -2,6 +2,7 @@
 [AoC](https://adventofcode.com/) solutions
 
 TODO:
+- solve day 12 part 2
 - find better solution to puzzle 5
 
 Testing performance:
