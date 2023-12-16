@@ -8,13 +8,14 @@ SPLITTERS = {
     '-': {'u': ('l', 'r'), 'd': ('l', 'r')},
 }
 
+EMPTY = '.'
+
 
 class LightRay:
     def __init__(self, y, x, d):
         self.y = y
         self.x = x
         self.d = d
-        self.tile = '.'
 
     def move(self):
         if self.d == 'l':
@@ -27,13 +28,15 @@ class LightRay:
             self.y += 1
 
     def update_dir(self, grid):
-        self.tile = grid[self.y][self.x]
+        tile = grid[self.y][self.x]
 
-        if self.tile in MIRRORS:
-            self.d = MIRRORS[self.tile][self.d]
+        if tile == EMPTY:
+            return
 
-        if self.tile in SPLITTERS and self.d in SPLITTERS[self.tile]:
-            self.d, new_dir = SPLITTERS[self.tile][self.d]
+        if tile in MIRRORS:
+            self.d = MIRRORS[tile][self.d]
+        elif tile in SPLITTERS and self.d in SPLITTERS[tile]:
+            self.d, new_dir = SPLITTERS[tile][self.d]
             return self.y, self.x, new_dir
 
 
@@ -48,29 +51,29 @@ def edge_generator(max_y, max_x):
 
 
 def get_num_energized(grid, rays, max_y, max_x):
-    visited = [[[] for _ in range(max_x)] for _ in range(max_y)]
+    # TODO: Can this function be somehow optimized?
+
+    visited = {}
 
     while rays:
         n = 0
         rays[n].move()
+        key = (rays[n].y, rays[n].x, rays[n].d)
 
         if (rays[n].x < 0 or rays[n].x >= max_x or
             rays[n].y < 0 or rays[n].y >= max_y or
-            rays[n].d in visited[rays[n].y][rays[n].x]
+            key in visited
         ):
             rays.pop(n)
             continue
 
-        visited[rays[n].y][rays[n].x].append(rays[n].d)
+        visited[key] = 1
         split = rays[n].update_dir(grid)
         if split:
             rays.append(LightRay(*split))
 
-    total = 0
-    for row in visited:
-        total += sum(map(bool, row))
-
-    return total
+    unique_tiles = set([key[:2] for key in visited.keys()])
+    return len(unique_tiles)
 
 
 def loader(input_path):
@@ -125,7 +128,7 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Both solutions found in {took:.6f}s')  # 800ms
+    print(f'Both solutions found in {took:.3f}s')  # 735ms
 
     # Regression test
     assert part1 == 7046
