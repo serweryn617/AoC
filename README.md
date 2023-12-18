@@ -2,7 +2,8 @@
 [AoC](https://adventofcode.com/) solutions
 
 TODO:
-- solve day 12 part 2
+- solve day 17 puzzle (try 3D Dijkstra's algorithm)
+- solve day 12 puzzle part 2
 - find better solution to puzzle 5
 
 Testing performance:
