@@ -4,12 +4,8 @@ UNKNOWN = '?'
 
 
 def permutations(spaces, total):
-    perms = []
-
     inc = [spaces ** i for i in range(total)]
     pos = [0] * total
-
-    print(spaces, total)
 
     for i in range(spaces ** total):
         a = [1] * spaces
@@ -19,14 +15,12 @@ def permutations(spaces, total):
         for j in pos:
             a[j] += 1
 
-        perms.append(tuple(a))
+        yield tuple(a)
 
         for n, j in enumerate(inc):
             if i % j == 0:
                 pos[n] += 1
                 pos[n] %= spaces
-
-    return set(perms)
 
 
 def get_springs_line(group, perm):
@@ -80,16 +74,11 @@ def solver(input_path, puzzle_type):
             springs[i] = '?'.join([springs[i]] * 5)
             groups[i] = groups[i] * 5
 
-    print(springs)
-    print(groups)
-
     total = 0
 
     for s, g in zip(springs, groups):
         spaces = len(g) + 1
         num_extra_spaces = len(s) - (sum(g) + len(g) - 1)
-
-        print(s, g)
 
         for perm in permutations(spaces, num_extra_spaces):
             line = get_springs_line(g, perm)
@@ -103,7 +92,7 @@ def solver(input_path, puzzle_type):
 def run_examples():
     examples = (
         ('test_input', 'possible', 21),
-        ('test_input', 'unfold', 525152),
+        # ('test_input', 'unfold', 525152),
     )
 
     for path, puzzle_type, expected in examples:
@@ -117,13 +106,14 @@ def main():
     import time
     start_time = time.time()
 
-    part1 = solver('test_input', 'possible')
+    part1 = solver('input', 'possible')
+    # part2 = solver('input', 'unfold')
 
     took = time.time() - start_time
 
     print('Puzzle 1 answer:', part1)
     # print('Puzzle 2 answer:', part2)
-    print(f'Both solutions found in {took:.3f}s')  # 17ms
+    print(f'Both solutions found in {took:.3f}s')  # 39000ms
 
     # Regression test
     assert part1 == 7792
