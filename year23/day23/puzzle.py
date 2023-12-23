@@ -9,8 +9,12 @@ SLOPES = {
 
 class Trail:
     def __init__(self, start):
-        self.start = start
+        self.start = start[:2]
+        self.start_dir = None
         self.end = None
+
+        if len(start) == 4:
+            self.start_dir = start[2:]
 
         self.length = 0
         self.longest_path = -1
@@ -30,9 +34,14 @@ class Trail:
         pos = self.start
         visited = [pos]
 
-        tile = grid[pos[0]][pos[1]]
-        if tile in SLOPES:
-            dy, dx = SLOPES[tile]
+        if self.start_dir is None:
+            tile = grid[pos[0]][pos[1]]
+            if tile in SLOPES:
+                dy, dx = SLOPES[tile]
+                pos = pos[0] + dy, pos[1] + dx
+                visited.append(pos)
+        else:
+            dy, dx = self.start_dir
             pos = pos[0] + dy, pos[1] + dx
             visited.append(pos)
 
@@ -55,7 +64,7 @@ class Trail:
         self.length = len(visited)
         self.end = pos
 
-    def find_next_starts(self, grid):
+    def find_next_starts(self, grid, directed=True):
         next_start_dir = None
 
         for key, (dy, dx) in SLOPES.items():
@@ -65,9 +74,12 @@ class Trail:
                 continue
 
             tile = grid[new_pos[0]][new_pos[1]]
-            if tile == key:
+            if directed and tile == key:
                 next_start_dir = dy, dx
                 self.next_starts.append(new_pos)
+            elif not directed and tile in SLOPES:
+                next_start_dir = dy, dx
+                self.next_starts.append(new_pos + next_start_dir)
 
         if len(self.next_starts) == 1:
             dy, dx = next_start_dir
@@ -77,8 +89,9 @@ class Trail:
 
 
 def find_longest_path(start, trails):
-    trails[start].longest_path = 0
+    # Modified Djikstra's Algorithm
 
+    trails[start].longest_path = 0
     not_visited = list(trails.values())
     not_visited.sort(key=Trail.sort_key, reverse=True)
 
@@ -89,6 +102,8 @@ def find_longest_path(start, trails):
         for next_trail in trail.next_trails:
             if length > next_trail.longest_path:
                 next_trail.longest_path = length
+
+                # Assume there is no loops
                 if next_trail not in not_visited:
                     not_visited.append(next_trail)
 
@@ -96,7 +111,7 @@ def find_longest_path(start, trails):
         not_visited.sort(key=Trail.sort_key, reverse=True)
 
 
-def init_trails(start, grid, trails):
+def init_trails(start, grid, trails, directed):
     enterances = [start]
 
     while enterances:
@@ -104,10 +119,10 @@ def init_trails(start, grid, trails):
 
         if pos not in trails:
             nt = Trail(pos)
-            trails[pos] = nt
+            trails[pos[:2]] = nt
 
             nt.get_trail_length(grid)
-            nt.find_next_starts(grid)
+            nt.find_next_starts(grid, directed)
             enterances += nt.next_starts
 
             if nt.reached_end:
@@ -121,7 +136,7 @@ def init_trails(start, grid, trails):
 def link_trails(trails):
     for trail in trails.values():
         for start in trail.next_starts:
-            trail.link_trail(trails[start])
+            trail.link_trail(trails[start[:2]])
 
 
 def loader(input_path):
@@ -139,18 +154,12 @@ def solver(input_path, puzzle_type):
     assert start[1] >= 0, 'Starting position not found'
 
     trails = {}
-    end_trail = init_trails(start, grid, trails)
+    directed = puzzle_type == 'slopes'
+    end_trail = init_trails(start, grid, trails, directed)
     link_trails(trails)
-
     find_longest_path(start, trails)
 
-    # for t in trails.values():
-    #     print(t.start, t.length)
-
     longest_path = end_trail.longest_path + end_trail.length - 1
-
-    # print('Longest', end_trail.longest_path, '+', end_trail.length)
-
     return longest_path
 
 
