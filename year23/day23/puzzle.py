@@ -157,16 +157,20 @@ def solver(input_path, puzzle_type):
     directed = puzzle_type == 'slopes'
     end_trail = init_trails(start, grid, trails, directed)
     link_trails(trails)
-    find_longest_path(start, trails)
 
-    longest_path = end_trail.longest_path + end_trail.length - 1
+    if puzzle_type == 'slopes':
+        find_longest_path(start, trails)
+        longest_path = end_trail.longest_path + end_trail.length - 1
+    else:
+        longest_path = 0
+
     return longest_path
 
 
 def run_examples():
     examples = (
         ('test_input', 'slopes', 94),
-        # ('test_input', 'longest', 154),
+        ('test_input', 'longest', 154),
     )
 
     for path, puzzle_type, expected in examples:
@@ -181,19 +185,19 @@ def main():
     start_time = time.time()
 
     part1 = solver('input', 'slopes')
-    # part2 = solver('input', 'longest')
+    part2 = solver('input', 'longest')
 
     took = time.time() - start_time
 
     print('Puzzle 1 answer:', part1)
-    # print('Puzzle 2 answer:', part2)
+    print('Puzzle 2 answer:', part2)
     print(f'Solution found in {took:.3f}s')  # 14ms
 
     # Regression test
     assert part1 == 2042
-    # assert part2 == 
+    assert part2 > 6038
 
 
 if __name__ == '__main__':
     run_examples()
-    main()
+    # main()
