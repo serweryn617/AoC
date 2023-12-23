@@ -1,3 +1,6 @@
+from a_star import AStar
+
+
 PASSIBLE = '.'
 SLOPES = {
     '^': (-1, 0),
@@ -77,8 +80,9 @@ class Trail:
 
 
 def find_longest_path(start, trails):
-    trails[start].longest_path = 0
+    # Modified Djikstra's Algorithm
 
+    trails[start].longest_path = 0
     not_visited = list(trails.values())
     not_visited.sort(key=Trail.sort_key, reverse=True)
 
@@ -89,6 +93,8 @@ def find_longest_path(start, trails):
         for next_trail in trail.next_trails:
             if length > next_trail.longest_path:
                 next_trail.longest_path = length
+
+                # Assume there is no loops
                 if next_trail not in not_visited:
                     not_visited.append(next_trail)
 
@@ -126,7 +132,7 @@ def link_trails(trails):
 
 def loader(input_path):
     with open(input_path, 'r') as puzzle:
-        grid = puzzle.readlines()
+        grid = [line.strip() for line in puzzle.readlines()]
 
     return grid
 
@@ -136,28 +142,45 @@ def solver(input_path, puzzle_type):
 
     grid = loader(input_path)
     start = 0, grid[0].find(PASSIBLE)
-    assert start[1] >= 0, 'Starting position not found'
+    end = len(grid) - 1, grid[-1].find('.')
+    assert start[1] >= 0, 'Start position not found'
+    assert end[1] >= 0, 'End position not found'
 
-    trails = {}
-    end_trail = init_trails(start, grid, trails)
-    link_trails(trails)
+    if puzzle_type == 'slopes':
+        # Assume Directed Acyclic Graph
+        trails = {}
+        end_trail = init_trails(start, grid, trails)
+        link_trails(trails)
+        find_longest_path(start, trails)
 
-    find_longest_path(start, trails)
+        longest_path = end_trail.longest_path + end_trail.length - 1
+        return longest_path
+    else:
+        # Grid, may contain cycles
+        astar = AStar(len(grid[0]), len(grid))
 
-    # for t in trails.values():
-    #     print(t.start, t.length)
+        block_x = []
+        block_y = []
 
-    longest_path = end_trail.longest_path + end_trail.length - 1
+        for y in range(len(grid)):
+            for x in range(len(grid[0])):
+                if grid[y][x] == '#':
+                    block_x.append(x)
+                    block_y.append(y)
 
-    # print('Longest', end_trail.longest_path, '+', end_trail.length)
+        astar.settargets(start, end)
+        astar.block(block_x, block_y)
+        result = astar.cal(rev=True)
+        assert result, 'Path not found'
 
-    return longest_path
+        path = astar.getpath()
+        return len(path)
 
 
 def run_examples():
     examples = (
         ('test_input', 'slopes', 94),
-        # ('test_input', 'longest', 154),
+        ('test_input', 'longest', 154),
     )
 
     for path, puzzle_type, expected in examples:
@@ -172,17 +195,17 @@ def main():
     start_time = time.time()
 
     part1 = solver('input', 'slopes')
-    # part2 = solver('input', 'longest')
+    part2 = solver('input', 'longest')
 
     took = time.time() - start_time
 
     print('Puzzle 1 answer:', part1)
-    # print('Puzzle 2 answer:', part2)
+    print('Puzzle 2 answer:', part2)
     print(f'Solution found in {took:.3f}s')  # 14ms
 
     # Regression test
     assert part1 == 2042
-    # assert part2 == 
+    assert part2 > 6038
 
 
 if __name__ == '__main__':
