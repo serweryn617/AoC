@@ -56,6 +56,8 @@ class Trail:
         self.end = pos
 
     def find_next_starts(self, grid):
+        next_start_dir = None
+
         for key, (dy, dx) in SLOPES.items():
             new_pos = self.end[0] + dy, self.end[1] + dx
 
@@ -64,7 +66,14 @@ class Trail:
 
             tile = grid[new_pos[0]][new_pos[1]]
             if tile == key:
+                next_start_dir = dy, dx
                 self.next_starts.append(new_pos)
+
+        if len(self.next_starts) == 1:
+            dy, dx = next_start_dir
+            self.length += 1
+            self.end = self.end[0] + dy, self.end[1] + dx
+            self.next_starts[0] = self.end[0] + dy, self.end[1] + dx
 
 
 def find_longest_path(start, trails):
@@ -88,7 +97,6 @@ def find_longest_path(start, trails):
 
 
 def init_trails(start, grid, trails):
-    # some trails are redundant
     enterances = [start]
 
     while enterances:
@@ -137,7 +145,7 @@ def solver(input_path, puzzle_type):
     find_longest_path(start, trails)
 
     # for t in trails.values():
-    #     print(t.start, t.length, t.next_trails)
+    #     print(t.start, t.length)
 
     longest_path = end_trail.longest_path + end_trail.length - 1
 
@@ -179,4 +187,4 @@ def main():
 
 if __name__ == '__main__':
     run_examples()
-    # main()
+    main()
