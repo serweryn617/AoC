@@ -1,3 +1,6 @@
+from graph_ants import Colony
+
+
 PASSIBLE = '.'
 SLOPES = {
     '^': (-1, 0),
@@ -22,7 +25,8 @@ class Trail:
 
         self.next_starts = []
         self.next_trails = []
-        self.prev_trails = []
+
+        self.ant_pheromone = 1
 
     def sort_key(self):
         return self.longest_path, self.length
@@ -30,7 +34,22 @@ class Trail:
     def link_trail(self, trail):
         self.next_trails.append(trail)
 
-    def get_trail_length(self, grid):
+    def get_next_trails(self):
+        return self.next_trails
+
+    def get_trail_length(self):
+        return self.length
+
+    def get_ant_pheromone(self):
+        return self.ant_pheromone
+
+    def add_ant_pheromone(self, num):
+        self.ant_pheromone += num
+
+    def is_last_node(self):
+        return self.reached_end
+
+    def traverse_trail(self, grid):
         pos = self.start
         visited = [pos]
 
@@ -113,6 +132,7 @@ def find_longest_path(start, trails):
 
 def init_trails(start, grid, trails, directed):
     enterances = [start]
+    pheromone = 1
 
     while enterances:
         pos = enterances[0]
@@ -121,12 +141,15 @@ def init_trails(start, grid, trails, directed):
             nt = Trail(pos)
             trails[pos[:2]] = nt
 
-            nt.get_trail_length(grid)
+            nt.traverse_trail(grid)
             nt.find_next_starts(grid, directed)
             enterances += nt.next_starts
 
             if nt.reached_end:
+                nt.add_ant_pheromone(10000)
                 end_trail = nt
+
+            nt.add_ant_pheromone((pos[0] + pos[1]) / 100)
 
         enterances.pop(0)
 
@@ -158,11 +181,25 @@ def solver(input_path, puzzle_type):
     end_trail = init_trails(start, grid, trails, directed)
     link_trails(trails)
 
+    for t in trails.values():
+        print(t.start, t.ant_pheromone, '-', [(x.start, x.ant_pheromone) for x in t.next_trails])
+
     if puzzle_type == 'slopes':
         find_longest_path(start, trails)
         longest_path = end_trail.longest_path + end_trail.length - 1
     else:
-        longest_path = 0
+        colony = Colony()
+        colony.set_next_node_function(Trail.get_next_trails)
+        colony.set_length_function(Trail.get_trail_length)
+        colony.set_end_reached_function(Trail.is_last_node)
+        colony.set_get_pheromone_function(Trail.get_ant_pheromone)
+        colony.set_add_pheromone_function(Trail.add_ant_pheromone)
+
+        longest_path = colony.unleash_the_ants(trails[start])
+        longest_path += end_trail.length - 1
+
+    print()
+    print()
 
     return longest_path
 
