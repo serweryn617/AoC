@@ -2,10 +2,13 @@
 [AoC](https://adventofcode.com/) solutions
 
 TODO:
-- solve day 17 puzzle (try 3D Dijkstra's algorithm)
+- find better solution to puzzle 5 (almanac, ranges)
 - solve day 12 puzzle part 2 (spring arrangements)
-- find better solution to puzzle 5 (Almanac, ranges)
+- solve day 17 puzzle (try 3D Dijkstra's algorithm)
 - solve day 20 puzzle part 2 (flip-flops and NANDs)
+- solve day 21 puzzle part 2 (number of possible end positions)
+- solve day 23 puzzle part 2 (longest path without slopes)
+- solve day 24 puzzle part 2 (intersecting lines)
 
 Testing performance:
 ```py
