@@ -1,6 +1,3 @@
-from copy import deepcopy
-
-
 class Node:
     def __init__(self, connections):
         self.connections = list(connections)
@@ -10,131 +7,40 @@ class Node:
             if c not in self.connections:
                 self.connections.append(c)
 
-    def remove_connection(self, connection):
-        if connection not in self.connections:
-            return
 
-        idx = self.connections.index(connection)
-        self.connections.pop(idx)
+def get_connections(macro_node, graph):
+    connections = {}
 
+    for node in macro_node:
+        edges = graph[node].connections
+        for edge in edges:
+            if edge in macro_node:
+                # internal connection
+                continue
 
-class Pathfinder:
-    def __init__(self, node, visited = (), length = 0):
-        self.node = node
-        self.visited = visited
-        self.length = length
+            if edge in connections:
+                connections[edge] += 1
+            else:
+                connections[edge] = 1
 
-    def next_nodes(self, graph, max_len):
-        connected = []
-
-        for c in graph[self.node].connections:
-            if c not in self.visited and self.length < max_len:
-                connected.append(Pathfinder(c, self.visited + (self.node,), self.length + 1))
-
-        return connected
+    return connections
 
 
-def get_shortest_path(start_node, end_node, graph):
-    print('get_shortest_path', start_node, end_node)
-    # DFS
-    length = get_shortest_path_length(start_node, end_node, graph)
+def find_group_size(node, graph, expected = 3):
+    # Stoer–Wagner algorithm
+    macro_node = [node]
 
-    if length is None:
-        return None
+    while True:
+        outside_connections = get_connections(macro_node, graph)
+        min_cut = sum(outside_connections.values())
 
-    heads = [Pathfinder(start_node)]
+        if min_cut == expected:
+            return len(macro_node)
 
-    while heads:
-        head = heads.pop(0)
-        if head.node == end_node:
-            return head.visited + (end_node,)
+        max_key = max(outside_connections, key = outside_connections.get)
+        macro_node.append(max_key)
 
-        # if end_node in [h.node for h in heads]:
-        #     idx = [h.node for h in heads].index(end_node)
-        #     return heads[idx].visited + (end_node,)
-        # head = heads.pop(0)
-
-        # heads += head.next_nodes(graph, 1000)
-        heads = head.next_nodes(graph, length + 2) + heads
-
-    return None
-
-
-def get_shortest_path_length(start_node, end_node, graph):
-    print('get_shortest_path_length', start_node, end_node)
-    # fill algorithm
-    visited = []
-    frontier = [start_node]
-    length = 0
-
-    while frontier:
-        if end_node in frontier:
-            return length
-
-        length += 1
-        next_nodes = []
-
-        for f in frontier:
-            for n in graph[f].connections:
-                if n not in visited and n not in frontier:
-                    next_nodes.append(n)
-
-        visited += frontier
-        frontier = next_nodes
-
-    return None
-
-
-def remove_edges(graph, node_list):
-    for i in range(len(node_list) - 1):
-        node_a = node_list[i]
-        node_b = node_list[i + 1]
-
-        graph[node_a].remove_connection(node_b)
-        graph[node_b].remove_connection(node_a)
-
-
-def get_number_of_paths(start_node, end_node, graph, limit = 4):
-    print('get_number_of_paths')
-
-    local_graph = deepcopy(graph)
-
-    for num_paths in range(1, limit + 1):
-        visited = get_shortest_path(start_node, end_node, local_graph)
-        
-        if visited is None:
-            num_paths -= 1
-            break
-
-        remove_edges(local_graph, visited)
-
-    return num_paths
-
-
-def find_num_connections(graph):
-    # variation of max flow algorithm
-    keys = list(graph.keys())
-    start_node = keys.pop(0)
-
-    group_size = 0
-    for n, end_node in enumerate(keys):
-        num_paths = get_number_of_paths(start_node, end_node, graph)
-        if num_paths == 3:
-            group_size += 1
-
-    return group_size
-
-
-def display_graph(graph):
-    print('GRAPH')
-    for k, v in graph.items():
-        print(k, ':', v.connections)
-    print('END GRAPH')
-
-
-def display_num_edges(graph):
-    num_edges = sum([len(n.connections) for n in graph.values()])
-    print('Num edges:', num_edges // 2)
+    return 0
 
 
 def loader(input_path):
@@ -161,12 +67,10 @@ def solver(input_path, puzzle_type):
 
     graph = loader(input_path)
 
-    # l = get_shortest_path_length('jqt', 'rsh', graph)
-    # print(l)
-    # return
+    start_node = tuple(graph.keys())[0]
 
     total_size = len(graph)
-    group_size = find_num_connections(graph)
+    group_size = find_group_size(start_node, graph)
 
     return (total_size - group_size) * group_size
 
@@ -195,16 +99,13 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     # print('Puzzle 2 answer:', part2)
-    print(f'Solution found in {took:.3f}s')  # 26ms
+    print(f'Solution found in {took:.3f}s')  # 1800ms
 
     # Regression test
-    assert part1 == 16589
+    assert part1 == 562912
     # assert part2 == 
 
 
 if __name__ == '__main__':
     run_examples()
-    # main()
-
-    import cProfile
-    cProfile.run("solver('input', '2d')")
+    main()
