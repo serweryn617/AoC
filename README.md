@@ -8,11 +8,12 @@ Result: 42 stars without help from Reddit :)
   this fix would take a lot longer, but was probably still possible.
 - Day 20 part 2: solved after taking some assumptions about the input
   data, taken from MEGATHREAD
+- Day 12 part 2: dynamic programming solution taken from MEGATHREAD
  -->
 
 TODO:
 - find better solution to puzzle 5 (almanac, ranges)
-- solve day 12 puzzle part 2 (spring arrangements)
+- find solution other than DP to day 12 puzzle part 2 (spring arrangements)
 - solve day 21 puzzle part 2 (number of possible end positions)
 - solve day 23 puzzle part 2 (longest path without slopes)
 - solve day 24 puzzle part 2 (intersecting lines)
