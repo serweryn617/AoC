@@ -42,6 +42,13 @@ def get_springs_line(group, perm):
     return ''.join(line)
 
 
+def validate_groups(test, groups):
+    test_groups = test.replace('.', ' ').split()
+    test_groups = [len(g) for g in test_groups]
+
+    return test_groups == list(groups)
+
+
 def validate_springs(test, allowed):
     for t, a in zip(test, allowed):
         if (t == '.' and a == '#') or (t == '#' and a == '.'):
@@ -80,11 +87,13 @@ def solver(input_path, puzzle_type):
         spaces = len(g) + 1
         num_extra_spaces = len(s) - (sum(g) + len(g) - 1)
 
-        for perm in permutations(spaces, num_extra_spaces):
+        for perm in set(permutations(spaces, num_extra_spaces)):
             line = get_springs_line(g, perm)
-            total += validate_springs(line, s)
 
-            # print(line, g, valid)
+            a = validate_springs(line, s)
+            b = validate_groups(line, g)
+
+            total += a and b
 
     return total
 
@@ -113,7 +122,7 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     # print('Puzzle 2 answer:', part2)
-    print(f'Both solutions found in {took:.3f}s')  # 39000ms
+    print(f'Solution found in {took:.3f}s')  # 39000ms
 
     # Regression test
     assert part1 == 7792
