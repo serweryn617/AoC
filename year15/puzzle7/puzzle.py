@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+
 WORD_MASK = 0xffff
 
 
@@ -18,7 +21,7 @@ class Gate:
         none_values = [v is None for v in values]
 
         if any(none_values):
-            return None, None
+            return self.output, None
 
         value = self._gate_func(list(values)) & WORD_MASK
         return self.output, value
@@ -63,14 +66,34 @@ class Wire(Gate):
 def loader(input_path):
     for line in open(input_path, 'r'):
         *source, _, output = line.split()
-        
+
         for i in range(len(source)):
             try:
                 source[i] = int(source[i])
             except ValueError:
                 pass
-        
+
         yield source, output
+
+
+def resolve_gate_states(gates, signals):
+    while 'a' not in signals:
+        to_pop = []
+
+        for idx in range(len(gates)):
+            gate = gates[idx]
+            inputs = gate.get_input_names()
+            for i in inputs:
+                if i in signals:
+                    gate.activate_input(i, signals[i])
+
+            output, value = gate.get_output()
+            if value is not None:
+                signals[output] = value
+                to_pop.append(idx)
+        
+        for idx in reversed(to_pop):
+            gates.pop(idx)
 
 
 def solver(input_path, puzzle_type):
@@ -103,37 +126,22 @@ def solver(input_path, puzzle_type):
             inputs = (source[0],)
             gates.append(Wire(output, inputs))
 
-    while 'a' not in signals:
-        to_pop = []
+    gates2 = deepcopy(gates)
+    signals2 = signals.copy()
 
-        for idx in range(len(gates)):
-            gate = gates[idx]
-            inputs = gate.get_input_names()
-            for i in inputs:
-                if i in signals:
-                    gate.activate_input(i, signals[i])
+    resolve_gate_states(gates, signals)
 
-            output, value = gate.get_output()
-            if value is not None:
-                signals[output] = value
-                to_pop.append(idx)
-        
-        for idx in reversed(to_pop):
-            gates.pop(idx)
-
-    return signals['a']
-
-    # if puzzle_type == 'part1':
-        # for i in data:
-        #     print(i)
-    # else:
-        
+    if puzzle_type == 'part1':
+        return signals['a']
+    else:
+        signals2['b'] = signals['a']
+        resolve_gate_states(gates2, signals2)
+        return signals2['a']
 
 
 def run_examples():
     examples = (
         ('test_input', 'part1', 72),
-        # ('test_input', 'part2', 1000*1000*1 + 1000*2 - 4),
     )
 
     for path, puzzle_type, expected in examples:
@@ -148,17 +156,17 @@ def main():
     start_time = time.time()
 
     part1 = solver('input', 'part1')
-    # part2 = solver('input', 'part2')
+    part2 = solver('input', 'part2')
 
     took = time.time() - start_time
 
     print('Puzzle 1 answer:', part1)
-    # print('Puzzle 2 answer:', part2)
+    print('Puzzle 2 answer:', part2)
     print(f'Both solutions found in {took:.3f}s')  # 8ms
 
     # Regression test
     assert part1 == 956
-    # assert part2 == 14110788
+    assert part2 == 40149
 
 
 if __name__ == '__main__':
