@@ -1,8 +1,8 @@
-def solve_part1(parsed_input):
+def solve_part1(parsed_input, is_example):
     return 0
 
 
-def solve_part2(parsed_input):
+def solve_part2(parsed_input, is_example):
     return 0
 
 
@@ -14,13 +14,13 @@ def loader(input_path):
     return None
 
 
-def solver(input_path, part):
+def solver(input_path, part, is_example=False):
     parsed_input = loader(input_path)
 
     if part == 1:
-        result = solve_part1(parsed_input)
+        result = solve_part1(parsed_input, is_example)
     else:
-        result = solve_part2(parsed_input)
+        result = solve_part2(parsed_input, is_example)
 
     return result
 
@@ -32,7 +32,7 @@ def run_examples():
     )
 
     for path, puzzle_type, expected in examples:
-        result = solver(path, puzzle_type)
+        result = solver(path, puzzle_type, is_example=True)
         assert result == expected, f'Example {path} {puzzle_type} failed: {result}'
 
     print("Examples passed")
