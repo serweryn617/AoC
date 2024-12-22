@@ -2,9 +2,10 @@ def vec_add(va, vb):
     return va[0] + vb[0], va[1] + vb[1]
 
 
-def out_of_bounds(pos, max_x, max_y):
+def out_of_bounds(pos, bounds):
     x, y = pos
-    return x < 0 or x >= max_x or y < 0 or y >= max_y
+    mx, my = bounds
+    return x < 0 or x >= mx or y < 0 or y >= my
 
 
 def get_char_pos(grid, char):
@@ -22,69 +23,74 @@ def grid_to_pos(grid, char):
     return positions
 
 
-class pathfind:
+class Node:
     OPEN = 0
     CLOSED = 1
 
+    def __init__(self, pos, cost, state, prev_pos):
+        self.pos = pos
+        self.cost = cost
+        self.state = state
+        self.prev_pos = prev_pos
+
+
+class Pathfind:
     directions = (1, 0), (0, 1), (-1, 0), (0, -1)
 
-    def __init__(self, blocked, size, start, end):
+    def __init__(self, blocked, bounds, start, end):
         self.blocked = blocked
-        self.max_x = size[0]
-        self.max_y = size[1]
+        self.bounds = bounds
 
         self.start = start
         self.end = end
 
-        self.nodes = {(*start, 0): (self.OPEN, None)}
+        self.open_nodes = [Node(start, 0, Node.OPEN, None)]
+        self.closed_nodes = []
+
         self.cost = None
         self.last_node = None
 
-    def get_nodes_at(self, x, y):
-        nodes = {k: v for k, v in self.nodes.items() if k[0] == x and k[1] == y}
-        return nodes
+    def open_nodes_at(self, pos):
+        return [node for node in self.open_nodes if node.pos == pos]
 
-    def get_min_cost_at(self, x, y):
-        nodes = self.get_nodes_at(x, y)
-        if not nodes:
-            return
-        node, _ = min(nodes.items(), key=lambda i: i[0][2])
-        _, _, cost = node
-        return cost
+    def closed_nodes_at(self, pos):
+        return [node for node in self.closed_nodes if node.pos == pos]
+
+    def min_cost_node_from(self, nodes):
+        return min(nodes, key=lambda n: n.cost)
 
     def step(self):
-        open_nodes = {k: v for k, v in self.nodes.items() if v[0] == self.OPEN}
-        if not open_nodes:
+        if not self.open_nodes:
             return True
 
-        node, data = min(open_nodes.items(), key=lambda i: i[0][2])
-        *node_pos, cost = node
-        _, parent = data
-        self.nodes[node] = (self.CLOSED, parent)
+        node = self.open_nodes.pop(0)
+        node.state = Node.CLOSED
+        self.closed_nodes.append(node)
 
-        if tuple(node_pos) == tuple(self.end):
-            self.cost = cost
+        if tuple(node.pos) == tuple(self.end):
+            self.cost = node.cost
             self.last_node = node
             return True
 
         for delta_pos in self.directions:
-            next_pos = vec_add(node_pos, delta_pos)
+            next_pos = vec_add(node.pos, delta_pos)
 
-            if out_of_bounds(next_pos, self.max_x, self.max_y):
+            if out_of_bounds(next_pos, self.bounds):
                 continue
 
             if next_pos in self.blocked:
                 continue
 
-            if self.get_nodes_at(*next_pos):
-                visited_cost = self.get_min_cost_at(*next_pos)
-                if cost > visited_cost:
+            open_at_pos = self.open_nodes_at(next_pos)
+            closed_at_pos = self.closed_nodes_at(next_pos)
+
+            if open_at_pos or closed_at_pos:
+                visited_cost = self.min_cost_node_from(open_at_pos + closed_at_pos).cost
+                if node.cost > visited_cost:
                     continue
 
-            next_cost = cost + 1
-            key = (*next_pos, next_cost)
-            if key not in self.nodes:
-                self.nodes[key] = (self.OPEN, node)
+            next_cost = node.cost + 1
+            self.open_nodes.append(Node(next_pos, next_cost, Node.OPEN, node.pos))
 
         return False
 
@@ -92,12 +98,12 @@ class pathfind:
         path = []
 
         node = self.last_node
-        while node:
+        while node.prev_pos:
             path.append(node)
-            node = self.nodes[node][1]
+            node = self.min_cost_node_from(self.closed_nodes_at(node.prev_pos))
+        path.append(node)
 
         return path
-
 
 
 def solve_part1(grid, is_example):
@@ -107,11 +113,11 @@ def solve_part1(grid, is_example):
 
     size = len(grid[0]), len(grid)
 
-    path = pathfind(blocked, size, start, end)
+    path = Pathfind(blocked, size, start, end)
     while not path.step(): pass
 
     shortest = path.get_path()
-    shortest = {(x, y): c for x, y, c in shortest}
+    shortest = {n.pos: n.cost for n in shortest}
 
     shortcuts = []
     for y in range(1, size[1] - 1):
@@ -136,8 +142,51 @@ def solve_part1(grid, is_example):
     return len([s for s in shortcuts if s >= min_cut])
 
 
-def solve_part2(parsed_input, is_example):
-    return 0
+def vec_sub(va, vb):
+    return va[0] - vb[0], va[1] - vb[1]
+
+
+def manhattan(va, vb):
+    dx, dy = vec_sub(va, vb)
+    return abs(dx) + abs(dy)
+
+
+def relative_distances(shortest, min_cut, max_dist=20):
+    shortest.sort(key=lambda x: x.cost)
+    pairs = []
+
+    for i in range(len(shortest) - min_cut):
+        start = shortest[i]
+        for j in range(i + min_cut, len(shortest)):
+            end = shortest[j]
+
+            dist = manhattan(start.pos, end.pos)
+            cut_len = end.cost - start.cost - dist
+
+            if dist <= max_dist and cut_len >= min_cut:
+                pairs.append((start.pos, end.pos, cut_len))
+
+    return pairs
+
+
+def solve_part2(grid, is_example):
+    start = get_char_pos(grid, 'S')
+    end = get_char_pos(grid, 'E')
+    blocked = grid_to_pos(grid, '#')
+
+    bounds = len(grid[0]), len(grid)
+
+    path = Pathfind(blocked, bounds, start, end)
+    while not path.step(): pass
+
+    shortest = path.get_path()
+
+    min_cut = 100
+    if is_example:
+        min_cut = 50
+
+    pairs = relative_distances(shortest, min_cut, max_dist=20)
+    return len(pairs)
 
 
 def loader(input_path):
@@ -161,7 +210,7 @@ def solver(input_path, part, is_example=False):
 def run_examples():
     examples = (
         ('test_input', 1, 44),
-        ('test_input', 2, 0),
+        ('test_input', 2, 285),
     )
 
     for path, puzzle_type, expected in examples:
@@ -182,11 +231,11 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # 0ms
+    print(f'Solutions found in {took:.3f}s')  # 17042ms
 
     # Regression test
     assert part1 == 1518
-    # assert part2 == 0
+    assert part2 == 1032257
 
 
 if __name__ == '__main__':
