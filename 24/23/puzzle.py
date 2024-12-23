@@ -49,8 +49,30 @@ def solve_part1(pairs, is_example):
     return len(loops)
 
 
-def solve_part2(parsed_input, is_example):
-    return 0
+def bron_kerbosch(ret_list: list, result: set, vertices: set, exclude: set, graph: dict):
+    if not vertices and not exclude:
+        ret_list.append(result)
+
+    while vertices:
+        vertex = vertices.pop()
+        vertices.add(vertex)
+
+        neighbours = graph[vertex]
+        bron_kerbosch(ret_list, result.union((vertex,)), vertices.intersection(neighbours), exclude.intersection(neighbours), graph)
+
+        vertices.remove(vertex)
+        exclude.add(vertex)
+
+
+def solve_part2(pairs, is_example):
+    conn = make_connections(pairs)
+
+    ret_list = []
+    bron_kerbosch(ret_list, set(), set(conn.keys()), set(), conn)
+
+    biggest = max(ret_list, key=lambda x: len(x))
+
+    return ','.join(sorted(biggest))
 
 
 def loader(input_path):
@@ -74,7 +96,7 @@ def solver(input_path, part, is_example=False):
 def run_examples():
     examples = (
         ('test_input', 1, 7),
-        ('test_input', 2, 0),
+        ('test_input', 2, 'co,de,ka,ta'),
     )
 
     for path, puzzle_type, expected in examples:
@@ -95,11 +117,11 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # 0ms
+    print(f'Solutions found in {took:.3f}s')  # 172ms
 
     # Regression test
-    # assert part1 == 0
-    # assert part2 == 0
+    assert part1 == 1043
+    assert part2 == 'ai,bk,dc,dx,fo,gx,hk,kd,os,uz,xn,yk,zs'
 
 
 if __name__ == '__main__':
