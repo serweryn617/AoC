@@ -1,3 +1,6 @@
+from functools import cache
+
+
 def dir_first(start, end, move_dict):
     h_pos = end[0], start[1]
     v_pos = start[0], end[1]
@@ -70,52 +73,6 @@ def all_moves(combination, move_dict):
     return results
 
 
-def get_delta(d):
-    if d == '<':
-        return -1,  0
-    elif d == '>':
-        return  1,  0
-    elif d == '^':
-        return  0, -1
-    elif d == 'v':
-        return  0,  1
-    return 0, 0
-
-
-def vec_add(va, vb):
-    return va[0] + vb[0], va[1] + vb[1]
-
-
-def reverse_moves(combination, move_dict):
-    res = ''
-    pos = move_dict['A']
-
-    for c in combination:
-        delta = get_delta(c)
-        pos = vec_add(pos, delta)
-
-        if pos not in move_dict.values():
-            print(pos)
-            raise ValueError
-
-        if c == 'A':
-            move_idx = list(move_dict.values()).index(pos)
-            move = list(move_dict.keys())[move_idx]
-            res += move
-
-    return res
-
-
-def check(combination):
-    m = reverse_moves(combination, arrows)
-    print(m)
-    m = reverse_moves(m, arrows)
-    print(m)
-    m = reverse_moves(m, keypad)
-    print(m)
-
-
-
 def solve_part1(combinations, is_example):
     total = 0
 
@@ -140,8 +97,94 @@ def solve_part1(combinations, is_example):
     return total
 
 
-def solve_part2(parsed_input, is_example):
-    return 0
+def make_combination(data, add):
+    result = []
+
+    for a in add:
+        result.extend(add_to_all(data, a))
+
+    return result
+
+
+def get_arrow_directions(start, end):
+    start_pos = arrows[start]
+    end_pos = arrows[end]
+
+    dx, dy = vec_sub(end_pos, start_pos)
+    first = dir_first(start_pos, end_pos, arrows)
+
+    h = horizontal(dx)
+    v = vertical(dy)
+
+    if first == 'v':
+        return v + h + 'A',
+    elif first == 'h':
+        return h + v + 'A',
+
+    return v + h + 'A', h + v + 'A'
+
+
+keys = ('^', '<', 'v', '>', 'A')
+lut = {s: {e: get_arrow_directions(s, e) for e in keys} for s in keys}
+
+
+def substitute_moves(combination):
+    res = ['']
+    start = 'A'
+
+    for i in range(len(combination)):
+        if i > 0:
+            start = combination[i - 1]
+        end = combination[i]
+        res = make_combination(res, lut[start][end])
+
+    return res
+
+
+@cache
+def recursive_length(levels, pattern):
+    if levels == 0:
+        return len(pattern)
+
+    assert pattern[-1] == 'A'
+    patterns = substitute_moves(pattern)
+
+    min_len = None
+
+    for pattern in patterns:
+        length = 0
+        parts = [m + 'A' for m in pattern.split('A')]
+
+        if parts[-1] == 'A':
+            parts.pop(-1)
+
+        for p in parts:
+            length += recursive_length(levels - 1, p)
+
+        min_len = min(min_len, length) if min_len is not None else length
+
+    return min_len
+
+
+def solve_part2(combinations, is_example):
+    total = 0
+
+    for combination in combinations:
+        keypad_moves = all_moves(combination, keypad)
+
+        min_len = None
+
+        for kp in keypad_moves:
+            l = recursive_length(25, kp)
+
+            if min_len is None:
+                min_len = l
+            else:
+                min_len = min(min_len, l)
+
+        total += min_len * int(combination[:-1])
+
+    return total
 
 
 def loader(input_path):
@@ -170,7 +213,7 @@ def solver(input_path, part, is_example=False):
 def run_examples():
     examples = (
         ('test_input', 1, 126384),
-        ('test_input', 2, 0),
+        ('test_input', 2, 154115708116294),
     )
 
     for path, puzzle_type, expected in examples:
@@ -191,11 +234,11 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # 0ms
+    print(f'Solutions found in {took:.3f}s')  # 62ms
 
     # Regression test
     assert part1 == 163920
-    # assert part2 == 0
+    assert part2 == 204040805018350
 
 
 if __name__ == '__main__':
