@@ -1,5 +1,13 @@
+import math
+
+
 def concat(a, b):
-    return int(f"{a}{b}")
+    digits = 0
+
+    if b != 0:
+        digits = math.floor(math.log10(b)) + 1
+
+    return a * 10 ** digits + b
 
 
 def evaluate(current, target, components, use_concat=False):
@@ -94,7 +102,7 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # 1210ms
+    print(f'Solutions found in {took:.3f}s')  # 1050ms
 
     # Regression test
     assert part1 == 21572148763543
