@@ -33,10 +33,12 @@ def solve_part1(parsed_input):
     return total
 
 
-def remove_rolls(grid, to_remove):
+def remove_rolls(grid):
+    to_remove = set(((x, y) for x in range(len(grid[0])) for y in range(len(grid))))
+
     total = 0
     while to_remove:
-        rem_x, rem_y = to_remove.pop(0)
+        rem_x, rem_y = to_remove.pop()
 
         if grid[rem_y][rem_x] != ROLL:
             continue
@@ -56,25 +58,13 @@ def remove_rolls(grid, to_remove):
                 continue
 
             if grid[check_y][check_x] == ROLL:
-                to_remove.append((check_x, check_y))
+                to_remove.add((check_x, check_y))
 
     return total
 
 
 def solve_part2(parsed_input):
-    to_remove = []
-    for y in range(len(parsed_input)):
-        for x in range(len(parsed_input[0])):
-            if parsed_input[y][x] != ROLL:
-                continue
-
-            count = count_around(parsed_input, x, y)
-            if count < 4:
-                to_remove.append((x, y))
-
-    total = remove_rolls(parsed_input, to_remove)
-
-    return total
+    return remove_rolls(parsed_input)
 
 
 def loader(input_path):
@@ -122,7 +112,7 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # 42ms
+    print(f'Solutions found in {took:.3f}s')  # 40ms
 
     # Regression test
     assert part1 == 1449
