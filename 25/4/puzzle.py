@@ -122,7 +122,7 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # 2ms
+    print(f'Solutions found in {took:.3f}s')  # 42ms
 
     # Regression test
     assert part1 == 1449
