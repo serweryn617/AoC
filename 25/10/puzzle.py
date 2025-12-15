@@ -35,6 +35,13 @@ def piecewise_add(target, button, mult=1):
     return tuple(target)
 
 
+def max_diff(current, target, button):
+    val = []
+    for i in button:
+        val.append(target[i] - current[i])
+    return min(val)
+
+
 def search_num_presses(buttons, current, target, num_presses=0):
     comp = compare(current, target)
     if comp == 0:
@@ -45,7 +52,9 @@ def search_num_presses(buttons, current, target, num_presses=0):
     if len(buttons) == 0:
         return 0
 
-    for i in range(max(target), -1, -1):
+    max_range = max_diff(current, target, buttons[0])
+
+    for i in range(max_range, -1, -1):
         curr = piecewise_add(current, buttons[0], mult=i)
         s = search_num_presses(buttons[1:], curr, target, num_presses + i)
         if s > 0:
@@ -57,8 +66,6 @@ def solve_part2(parsed_input):
     total = 0
     i = 1
     for _, _, button_tuples, joltage in parsed_input:
-        print(f"{i}/150")
-        i += 1
         # Pressing buttons that update multiple counters at once is fastest, then do a DFS
         button_tuples.sort(key=lambda x: len(x), reverse=True)
         empty = tuple([0 for _ in joltage])
@@ -162,5 +169,5 @@ def main():
 
 
 if __name__ == '__main__':
-    run_examples()
+    # run_examples()
     main()
