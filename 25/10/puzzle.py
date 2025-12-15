@@ -1,5 +1,6 @@
 import itertools
 from operator import xor
+from scipy.optimize import linprog
 
 
 def calc_num_button_presses(light, button_masks):
@@ -18,58 +19,35 @@ def solve_part1(parsed_input):
     return total
 
 
-def compare(current, target):
-    res = 0
-    for c, t in zip(current, target, strict=True):
-        if c > t:
-            return -1
-        if c < t:
-            res = 1
-    return res
+def verify(buttons, joltage, num_presses):
+    res = [0 for _ in joltage]
+    for val, button in zip(num_presses, buttons):
+        for i in button:
+            res[i] += round(val)
+    assert tuple(res) == tuple(joltage), f"{res} =/= {joltage}"
 
 
-def piecewise_add(target, button, mult=1):
-    target = list(target)
-    for i in button:
-        target[i] += mult
-    return tuple(target)
+def calc_num_presses(buttons, joltage):
+    a = [[int(idx in b) for b in buttons] for idx in range(len(joltage))]
+    c = [1 for _ in range(len(buttons))]
 
+    result = linprog(
+        c=c,
+        A_eq=a,
+        b_eq=joltage,
+        bounds=(0, max(joltage)),
+        integrality=1,
+    )
 
-def max_diff(current, target, button):
-    val = []
-    for i in button:
-        val.append(target[i] - current[i])
-    return min(val)
+    verify(buttons, joltage, result.x)
 
-
-def search_num_presses(buttons, current, target, num_presses=0):
-    comp = compare(current, target)
-    if comp == 0:
-        return num_presses
-    elif comp == -1:
-        return 0
-
-    if len(buttons) == 0:
-        return 0
-
-    max_range = max_diff(current, target, buttons[0])
-
-    for i in range(max_range, -1, -1):
-        curr = piecewise_add(current, buttons[0], mult=i)
-        s = search_num_presses(buttons[1:], curr, target, num_presses + i)
-        if s > 0:
-            return s
-    return 0
+    return round(result.fun)
 
 
 def solve_part2(parsed_input):
     total = 0
-    i = 1
     for _, _, button_tuples, joltage in parsed_input:
-        # Pressing buttons that update multiple counters at once is fastest, then do a DFS
-        button_tuples.sort(key=lambda x: len(x), reverse=True)
-        empty = tuple([0 for _ in joltage])
-        total += search_num_presses(tuple(button_tuples), empty, joltage)
+        total += calc_num_presses(button_tuples, joltage)
     return total
 
 
@@ -161,13 +139,13 @@ def main():
 
     print('Puzzle 1 answer:', part1)
     print('Puzzle 2 answer:', part2)
-    print(f'Solutions found in {took:.3f}s')  # xms
+    print(f'Solutions found in {took:.3f}s')  # 105ms
 
     # Regression test
     assert part1 == 428
-    # assert part2 == 0
+    assert part2 == 16613
 
 
 if __name__ == '__main__':
-    # run_examples()
+    run_examples()
     main()
